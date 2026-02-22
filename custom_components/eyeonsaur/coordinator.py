@@ -19,6 +19,7 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.util.dt import as_local
 from homeassistant.util.dt import now as hass_now
 from saur_client import (
+    SaurApiError,
     SaurClient,
     SaurResponseContracts,
     SaurResponseDelivery,
@@ -323,7 +324,7 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
             monthly_data: SaurResponseMonthly = (
                 await self.client.get_monthly_data(year, month, section_id)
             )
-        except ClientResponseError:
+        except (ClientResponseError, SaurApiError):
             # Ajoute à la blacklist en cas d'erreur
             self.blacklisted_months.add((year, month))
             _LOGGER.warning(
