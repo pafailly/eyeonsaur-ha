@@ -188,7 +188,7 @@ class SaurStatisticsSensor(SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_suggested_display_precision = 2
     _attr_should_poll = False
-    _attr_disabled_by_default = True
+    _attr_disabled_by_default = False
     _attr_native_value = None  # Jamais de valeur
 
     def __init__(

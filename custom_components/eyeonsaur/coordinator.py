@@ -201,6 +201,39 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
         # await asyncio.gather(*self._background_tasks)
         await super().async_config_entry_first_refresh()
 
+    async def async_inject_all_historical_data(self) -> None:
+        """Injecte les données historiques pour tous les compteurs.
+
+        Doit être appelé APRÈS la création des entités (async_forward_entry_setups),
+        car l'injection nécessite que les entités existent dans le registre HA.
+        """
+        # Attendre que les tâches de fond (fetch + store SQLite) soient terminées
+        if self._background_tasks:
+            _LOGGER.debug(
+                "Attente de %d tâches de fond avant injection...",
+                len(self._background_tasks),
+            )
+            await asyncio.gather(*self._background_tasks, return_exceptions=True)
+
+        for compteur in self._cached_data.compteurs:
+            if compteur.isContractTerminated:
+                continue
+
+            all_consumptions: TheoreticalConsumptionDatas = (
+                await self.db_helper.async_get_all_consumptions_with_absolute(
+                    compteur.sectionId
+                )
+            )
+            if all_consumptions:
+                _LOGGER.debug(
+                    "Injection des données historiques pour %s (%d entrées)",
+                    compteur.sectionId,
+                    len(all_consumptions),
+                )
+                await self._async_inject_historical_data(
+                    all_consumptions, compteur
+                )
+
     async def _async_update_data(self) -> SaurData:
         """Fetch data from the API and update the database."""
         _LOGGER.debug(
@@ -380,8 +413,6 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
             "🔥🔥 TheoreticalConsumptionDatas  %s 🔥🔥",
             all_consumptions,
         )
-        # Recalculate all historical data
-        await self._async_inject_historical_data(all_consumptions, compteur)
 
         # Détecte et traite les jours manquants
         await self._async_handle_missing_dates(all_consumptions, compteur)
@@ -411,8 +442,10 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
             )
         else:
             # Entité non trouvée
-            _LOGGER.debug(
-                "_async_inject_historical_data : Entité non trouvée."
+            _LOGGER.warning(
+                "_async_inject_historical_data : Entité non trouvée pour %s. "
+                "L'injection des données historiques est ignorée.",
+                f"{compteur.serial_number}_water_statistics",
             )
             return
 
