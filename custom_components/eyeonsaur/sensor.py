@@ -52,7 +52,7 @@ async def async_setup_entry(
             name=f"Compteur {compteur.serial_number}",
             manufacturer=compteur.manufacturer,
             model=compteur.model,
-            via_device=(DOMAIN, compteur.clientReference),
+            via_device=(DOMAIN, compteur.contractId),
             serial_number=compteur.serial_number,
             sw_version=compteur.sectionId,
         )

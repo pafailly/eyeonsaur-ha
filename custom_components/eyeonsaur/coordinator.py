@@ -171,8 +171,8 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
 
             # Créer un device pour le compteur
             device_info = DeviceInfo(
-                identifiers={(DOMAIN, compteur.clientReference)},
-                name=f"Contrat {compteur.clientReference}",
+                identifiers={(DOMAIN, compteur.contractId)},
+                name=f"Contrat {compteur.contractName} ({compteur.contractId})",
                 manufacturer="EyeOnSaur",
                 model="Contrat",
                 entry_type=DeviceEntryType.SERVICE,
