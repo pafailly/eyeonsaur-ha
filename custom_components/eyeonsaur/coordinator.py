@@ -529,23 +529,13 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
             *last_tasks, return_exceptions=True
         )
 
-        filtered_delivery_results = [
-            d for d in delivery_results if isinstance(d, dict)
-        ]
-        filtered_last_results = [
-            d for d in last_results if isinstance(d, dict)
-        ]
-
         # 3. Mettre à jour les compteurs avec les données DELIVERY et LAST
         updated_compteurs: list[Compteur] = []
-        for i, (delivery_data, last_data) in enumerate(
-            zip(filtered_delivery_results, filtered_last_results, strict=False)
-            # zip(delivery_results, last_results, strict=False)
-        ):
-            compteur = compteurs[i]
+        for i, compteur in enumerate(compteurs):
+            delivery_data = delivery_results[i]
+            last_data = last_results[i]
 
-            if isinstance(delivery_data, HomeAssistantError):
-                # Gestion de l'erreur DELIVERY : on log mais on continue
+            if isinstance(delivery_data, Exception):
                 _LOGGER.error(
                     "Erreur lors de la mise à jour du compteur %s avec les "
                     "données DELIVERY: %s. Utilisation des anciennes données.",
@@ -553,11 +543,9 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
                     delivery_data,
                 )
             else:
-                # on utilise la methode update_delivery de la class Compteur
                 compteur.update_delivery(delivery_data)
 
-            if isinstance(last_data, HomeAssistantError):
-                # Gestion de l'erreur LAST : on log l'erreur mais on continue
+            if isinstance(last_data, Exception):
                 _LOGGER.error(
                     "Erreur lors de la mise à jour du compteur %s avec les "
                     "données LAST: %s. Utilisation des anciennes données.",
@@ -565,7 +553,6 @@ class SaurCoordinator(DataUpdateCoordinator[SaurData]):
                     last_data,
                 )
             else:
-                # on utilise la methode update_last de la class Compteur
                 compteur.update_last(last_data)
 
             updated_compteurs.append(compteur)
